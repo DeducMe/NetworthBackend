@@ -14,3 +14,18 @@ export async function currencyExchange(from: string, to: string) {
 
     return await resp;
 }
+
+export async function getStock(stock: string) {
+    const url = `https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=${stock}&interval=5min&apikey=${ALPHA_VINTAGE_KEY}`;
+
+    const resp = await fetch(url, {
+        method: 'GET',
+        headers: {}
+    }).then((response) => {
+        if (response.ok) {
+            return response.json();
+        }
+    });
+
+    return await resp;
+}
