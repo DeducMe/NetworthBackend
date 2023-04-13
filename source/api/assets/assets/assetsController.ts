@@ -1,7 +1,8 @@
 import { NextFunction, Request, Response } from 'express';
-import { errorHandler, sendBackHandler } from '../../../functions/apiHandlers';
+import { decodeToken, errorHandler, sendBackHandler } from '../../../functions/apiHandlers';
 import Assets from './assetsModal';
 import { createAssetsAdditionalTypesItem } from '../assetsAdditional/assetsAdditionalTypesItem/assetsAdditionalTypesItemController';
+import profileModal from '../../users/profile/profileModal';
 
 const create = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -12,9 +13,13 @@ const create = async (req: Request, res: Response, next: NextFunction) => {
             additionalLooped.push(await createAssetsAdditionalTypesItem(item));
         }
 
-        console.log(additionalLooped);
+        const decoded = await decodeToken(req?.headers?.authorization || '');
+        if (!decoded) return errorHandler(res, 'decode of auth header went wrong', 500);
 
-        const data = await new Assets({ name, categories, price, image, additional: additionalLooped, currency }).save();
+        const profile = await profileModal.findOne({ userId: decoded.id });
+        if (!profile) return errorHandler(res, 'decode of auth header went wrong', 500);
+
+        const data = await new Assets({ name, categories, price, image, additional: additionalLooped, currency, userProfileId: profile.id }).save();
 
         sendBackHandler(res, 'assets', data);
     } catch (e) {
@@ -23,6 +28,9 @@ const create = async (req: Request, res: Response, next: NextFunction) => {
 };
 
 const getAll = async (req: Request, res: Response, next: NextFunction) => {
+    const decoded = await decodeToken(req?.headers?.authorization || '');
+    if (!decoded) return errorHandler(res, 'decode of auth header went wrong', 500);
+
     const data = await Assets.find()
         .populate([
             'categories',

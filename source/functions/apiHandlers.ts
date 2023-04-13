@@ -20,8 +20,9 @@ export function sendBackHandler(res: Response, dataName: string, data: any) {
 }
 
 export function errorHandler(res: Response, error: any, code?: number) {
+    console.log(code, res.statusCode);
     return Promise.resolve().then(() => {
-        return res.status(code || res.statusCode === 200 ? 500 : res.statusCode).json({
+        return res.status(code ? code : res.statusCode === 200 ? 500 : res.statusCode).json({
             message: error.message,
             ...error.errors
         });
@@ -41,4 +42,12 @@ export async function checkAuthToken(res: Response, req: Request) {
     }
 
     return { success: true, message: null };
+}
+
+export async function decodeToken(authHeader: string) {
+    const decoded = await jsonWebToken.verify(authHeader, JWT_SECRET_TOKEN);
+    if (!decoded || typeof decoded === 'string') {
+        return null;
+    }
+    return decoded;
 }

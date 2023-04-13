@@ -6,7 +6,9 @@ const ProfileSchema: Schema = new Schema(
     {
         userId: { type: String, required: true },
         name: { type: Schema.Types.String, required: false },
-        avatar: { type: Schema.Types.String, required: false }
+        avatar: { type: Schema.Types.String, required: false },
+        currencySet: { type: Schema.Types.ObjectId, ref: 'Currency', required: false },
+        total: { type: Schema.Types.Number, required: false }
     },
     {
         timestamps: false
