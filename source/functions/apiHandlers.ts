@@ -29,6 +29,10 @@ export function errorHandler(res: Response, error: any, code?: number) {
     });
 }
 
+export function typeCheckErrorHandler(res: Response, types: { [key: string]: any }) {
+    return errorHandler(res, { message: `Params didnt pass server type check ${JSON.stringify(types).replace(/["]/g, "'")}` }, 422);
+}
+
 export async function checkAuthToken(res: Response, req: Request) {
     if (allowedMethods.includes(req.url)) return { success: true, message: null };
     let authHeader = req?.headers?.authorization;

@@ -17,6 +17,7 @@ import { checkAuthToken, errorHandler } from './functions/apiHandlers';
 import categoriesRoute from './api/assets/categories/categoriesRoute';
 import currencyRoute from './api/assets/currency/currencyRoute';
 import typesRoute from './api/assets/types/typesRoute';
+import stocksRoute from './api/assets/noModel/stocks/stocksRoute';
 
 // import errorHandler from './errorHandling';
 const NAMESPACE = 'Server';
@@ -83,6 +84,7 @@ app.use('/api/', categoriesRoute);
 app.use('/api/', currencyRoute);
 app.use('/api/', assetsTypesItemRoute);
 app.use('/api/', typesRoute);
+app.use('/api/', stocksRoute);
 
 app.delete('/api/wipe', async (req, res, next) => {
     mongoose.connection.dropDatabase();
