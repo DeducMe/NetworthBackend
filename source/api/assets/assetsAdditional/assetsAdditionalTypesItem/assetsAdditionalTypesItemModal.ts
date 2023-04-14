@@ -8,7 +8,7 @@ const AssetsAdditionalTypesItemSchema: Schema = new Schema(
         value: { type: Schema.Types.Mixed, required: true }
     },
     {
-        timestamps: true
+        timestamps: false
     }
 );
 

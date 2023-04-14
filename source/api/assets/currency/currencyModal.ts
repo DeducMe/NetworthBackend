@@ -9,7 +9,7 @@ const CurrencySchema: Schema = new Schema(
         image: { type: Schema.Types.String, required: false }
     },
     {
-        timestamps: true
+        timestamps: false
     }
 );
 

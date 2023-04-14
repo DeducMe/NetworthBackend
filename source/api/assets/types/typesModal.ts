@@ -12,7 +12,7 @@ const TypesSchema: Schema = new Schema(
         sysname: { type: Schema.Types.String, required: true }
     },
     {
-        timestamps: true
+        timestamps: false
     }
 );
 

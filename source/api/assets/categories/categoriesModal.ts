@@ -8,7 +8,7 @@ const CategoriesSchema: Schema = new Schema(
         image: { type: Schema.Types.String, required: false }
     },
     {
-        timestamps: true
+        timestamps: false
     }
 );
 

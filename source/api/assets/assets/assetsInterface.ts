@@ -6,6 +6,7 @@ export default interface Assets extends Document {
     name: string;
     categories?: Schema.Types.ObjectId[];
     price: number;
+    amount: number;
     image: string;
     additional?: Schema.Types.ObjectId[];
 }

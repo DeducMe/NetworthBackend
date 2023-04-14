@@ -6,7 +6,7 @@ import profileModal from '../../users/profile/profileModal';
 
 const create = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        let { name, categories, price, image, additional, currency } = req.body;
+        let { name, categories, price, image, additional, currency, amount } = req.body;
 
         let additionalLooped = [];
         for (const item of additional) {
@@ -19,7 +19,7 @@ const create = async (req: Request, res: Response, next: NextFunction) => {
         const profile = await profileModal.findOne({ userId: decoded.id });
         if (!profile) return errorHandler(res, 'decode of auth header went wrong', 500);
 
-        const data = await new Assets({ name, categories, price, image, additional: additionalLooped, currency, userProfileId: profile.id }).save();
+        const data = await new Assets({ name, amount, categories, price, image, additional: additionalLooped, currency, userProfileId: profile.id }).save();
 
         sendBackHandler(res, 'assets', data);
     } catch (e) {
@@ -33,6 +33,7 @@ const getAll = async (req: Request, res: Response, next: NextFunction) => {
 
     const data = await Assets.find()
         .populate([
+            'type',
             'categories',
             'currency',
             'additional',

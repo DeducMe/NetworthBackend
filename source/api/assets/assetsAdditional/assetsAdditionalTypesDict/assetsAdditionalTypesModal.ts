@@ -8,7 +8,7 @@ const AssetsAdditionalTypesSchema: Schema = new Schema(
         keys: [{ type: Schema.Types.String, required: false }]
     },
     {
-        timestamps: true
+        timestamps: false
     }
 );
 
