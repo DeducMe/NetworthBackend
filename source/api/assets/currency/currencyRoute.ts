@@ -7,5 +7,6 @@ router.post('/currency', controller.create);
 router.post('/currencyExchange', controller.exchangeCurrency);
 
 router.get('/currency', controller.getAll);
+router.get('/initCurrencies', controller.initCurrencies);
 
 export default router;

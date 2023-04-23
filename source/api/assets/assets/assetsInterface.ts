@@ -9,4 +9,6 @@ export default interface Assets extends Document {
     amount: number;
     image: string;
     additional?: Schema.Types.ObjectId[];
+    sysname: string;
+    pricePerItem: number;
 }

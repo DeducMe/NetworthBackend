@@ -4,8 +4,9 @@ import Profile from './profileModal';
 import jsonWebToken from 'jsonwebtoken';
 import { JWT_SECRET_TOKEN } from '../../../config/config';
 import profileModal from './profileModal';
-import { currencyExchange } from '../../../functions/alphavantage';
+
 import assetsModal from '../../assets/assets/assetsModal';
+import { currencyExchangeCC } from '../../../functions/cryptocompare';
 
 const get = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -31,14 +32,17 @@ const getNetworth = async (req: Request, res: Response, next: NextFunction) => {
 
     const profile = await Profile.findOne({ userId: decoded.id }).populate(['currencySet']);
     if (!profile) return errorHandler(res, 'decode of auth header went wrong', 500);
+    if (!profile?.currencySet?.sysname) return errorHandler(res, 'Please set currency', 405);
     const assets = await assetsModal.find({ userProfileId: profile.id }).populate(['currency']);
 
     let acc = 0;
     await Promise.all(
         assets.map(async (asset) => {
-            const exchangeRate = await currencyExchange(asset.currency.sysname, profile.currencySet.sysname);
-            acc += asset.price * exchangeRate['Realtime Currency Exchange Rate']['5. Exchange Rate'];
-            console.log(acc, exchangeRate, asset.price);
+            // const exchangeRate = await currencyExchange(asset.currency.sysname, profile.currencySet.sysname);
+            // acc += asset.price * exchangeRate['Realtime Currency Exchange Rate']['5. Exchange Rate'];
+            const exchangeRate = await currencyExchangeCC(asset.currency.sysname, profile.currencySet.sysname);
+            const converted = asset.price * exchangeRate[profile.currencySet.sysname];
+            acc += converted;
         })
     );
 

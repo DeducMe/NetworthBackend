@@ -31,7 +31,10 @@ const getAll = async (req: Request, res: Response, next: NextFunction) => {
     const decoded = await decodeToken(req?.headers?.authorization || '');
     if (!decoded) return errorHandler(res, 'decode of auth header went wrong', 500);
 
-    const data = await Assets.find()
+    const profile = await profileModal.findOne({ userId: decoded.id });
+    if (!profile) return errorHandler(res, 'decode of auth header went wrong', 500);
+
+    const data = await Assets.find({ userProfileId: profile.id })
         .populate([
             'type',
             'categories',

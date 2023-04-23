@@ -5,5 +5,6 @@ const router = express.Router();
 
 router.post('/crypto', controller.create);
 router.get('/crypto', controller.getAll);
+router.get('/cryptoList', controller.getList);
 
 export default router;

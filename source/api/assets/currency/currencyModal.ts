@@ -6,7 +6,8 @@ const CurrencySchema: Schema = new Schema(
     {
         name: { type: Schema.Types.String, required: false },
         sysname: { type: Schema.Types.String, required: false },
-        image: { type: Schema.Types.String, required: false }
+        image: { type: Schema.Types.String, required: false },
+        symbol: { type: Schema.Types.String, required: false }
     },
     {
         timestamps: false

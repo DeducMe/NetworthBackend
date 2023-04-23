@@ -2,7 +2,7 @@ import { Response, Request } from 'express';
 import jsonWebToken from 'jsonwebtoken';
 import { JWT_SECRET_TOKEN } from '../config/config';
 
-const allowedMethods = ['/api/user/register', '/api/user/login', '/apiDocs', '/api/wipe'];
+const allowedMethods = ['/api/user/register', '/api/user/login', '/api/categories', '/apiDocs', '/api/wipe'];
 
 export function sendBackHandler(res: Response, dataName: string, data: any) {
     return Promise.resolve()

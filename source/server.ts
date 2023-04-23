@@ -96,3 +96,13 @@ app.delete('/api/wipe', async (req, res, next) => {
 const httpServer = http.createServer(app);
 console.log(config.server);
 httpServer.listen(config.server.port, config.server.hostname, () => logging.info(NAMESPACE, `Server is running on http://${config.server.hostname}:${config.server.port}/`));
+
+// const finnhub = require('finnhub');
+
+// const api_key = finnhub.ApiClient.instance.authentications['api_key'];
+// api_key.apiKey = ''; // Replace this
+// const finnhubClient = new finnhub.DefaultApi();
+
+// finnhubClient.cryptoCandles('BINANCE:BTCUSDT', 'D', 1590988249, 1591852249, (error: any, data: any, response: any) => {
+//     console.log(data);
+// });
