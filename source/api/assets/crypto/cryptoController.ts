@@ -163,8 +163,8 @@ const getAll = async (req: Request, res: Response, next: NextFunction) => {
             priceTotal = cryptoItem.price * prices[coinCreatedInCurrency][profileCurrency.toLowerCase()];
         }
 
-        const allTime = (pricePerItem - currentPrice) * cryptoItem.amount;
-        const allTimePercent = (pricePerItem / currentPrice) * 100 - 100;
+        const allTime = (currentPrice - pricePerItem) * cryptoItem.amount;
+        const allTimePercent = (currentPrice / pricePerItem) * 100 - 100;
 
         data.push({
             ...cryptoItem,
