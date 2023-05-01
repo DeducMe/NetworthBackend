@@ -5,7 +5,7 @@ import profileModal from '../../users/profile/profileModal';
 
 const create = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        let { name, asset, type, price, amount } = req.body;
+        let { name, asset, type, price, amount, operationDate } = req.body;
 
         const decoded = await decodeToken(req?.headers?.authorization || '');
         if (!decoded) return errorHandler(res, 'decode of auth header went wrong', 500);
@@ -13,7 +13,7 @@ const create = async (req: Request, res: Response, next: NextFunction) => {
         const profile = await profileModal.findOne({ userId: decoded.id });
         if (!profile) return errorHandler(res, 'decode of auth header went wrong', 500);
 
-        const data = await new AssetsChangeLog({ name, asset, type, price, amount, userProfileId: profile.id }).save();
+        const data = await new AssetsChangeLog({ name, asset, type, price, amount, userProfileId: profile.id, operationDate }).save();
 
         sendBackHandler(res, 'assetsChangeLog', data);
     } catch (e) {

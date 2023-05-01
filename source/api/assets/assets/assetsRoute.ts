@@ -4,6 +4,6 @@ import controller from './assetsController';
 const router = express.Router();
 
 router.post('/assets', controller.create);
-router.get('/assets', controller.getAll);
+router.post('/getAssets', controller.getAll);
 
 export default router;

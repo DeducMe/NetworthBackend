@@ -8,6 +8,7 @@ export interface IAssetsChangeLog extends Document {
     type: string;
     price: number;
     amount: number;
+    operationDate: Schema.Types.Date;
 }
 
 const AssetsChangeLogSchema: Schema = new Schema(
@@ -17,7 +18,8 @@ const AssetsChangeLogSchema: Schema = new Schema(
         type: { type: Schema.Types.String, required: true },
         price: { type: Schema.Types.Number, required: true },
         amount: { type: Schema.Types.Number, required: true },
-        userProfileId: { type: Schema.Types.ObjectId, ref: 'Profile', required: true }
+        userProfileId: { type: Schema.Types.ObjectId, ref: 'Profile', required: true },
+        operationDate: { type: Schema.Types.Date, required: true }
     },
     {
         timestamps: true

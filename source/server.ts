@@ -18,7 +18,7 @@ import categoriesRoute from './api/assets/categories/categoriesRoute';
 import currencyRoute from './api/assets/currency/currencyRoute';
 import typesRoute from './api/assets/types/typesRoute';
 import stocksRoute from './api/assets/noModel/stocks/stocksRoute';
-import cryptoRoute from './api/assets/noModel/crypto/cryptoRoute';
+import cryptoRoute from './api/assets/crypto/cryptoRoute';
 import assetsChangeLogRoute from './api/assets/assetsChangeLog/assetsChangeLogRoute';
 
 // import errorHandler from './errorHandling';

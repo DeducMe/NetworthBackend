@@ -28,13 +28,27 @@ const create = async (req: Request, res: Response, next: NextFunction) => {
 };
 
 const getAll = async (req: Request, res: Response, next: NextFunction) => {
+    let { filters } = req.body;
+
     const decoded = await decodeToken(req?.headers?.authorization || '');
     if (!decoded) return errorHandler(res, 'decode of auth header went wrong', 500);
 
     const profile = await profileModal.findOne({ userId: decoded.id });
     if (!profile) return errorHandler(res, 'decode of auth header went wrong', 500);
 
-    const data = await Assets.find({ userProfileId: profile.id })
+    const additionalFilters: any = {};
+
+    if (filters.priceMin || filters.priceMax) {
+        additionalFilters.price = {};
+        if (filters.priceMin) additionalFilters.price.$lt = filters?.priceMin;
+        if (filters.priceMax) additionalFilters.price.$gte = filters?.priceMax;
+    }
+
+    if (filters.categories) {
+        additionalFilters.categories = { $in: filters.categories };
+    }
+
+    const data = await Assets.find({ userProfileId: profile.id, ...additionalFilters })
         .populate([
             'type',
             'categories',

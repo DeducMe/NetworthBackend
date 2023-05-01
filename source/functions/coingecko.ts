@@ -6,8 +6,43 @@ type CryptoSymbols = {
     name: string;
 };
 
+type CryptoSymbolsExtended = {
+    id: string;
+    name: string;
+    symbol: string;
+    api_symbol: string;
+    market_cap_rank: number;
+    thumb: string;
+    large: string;
+};
+
+export async function searchSymbols(query: string): Promise<{ coins: CryptoSymbolsExtended[] }> {
+    const url = `https://api.coingecko.com/api/v3/search?query=${query}`;
+    const resp = await fetch(url, {
+        method: 'GET',
+        headers: {}
+    }).then((response) => {
+        return response.json();
+    });
+
+    return await resp;
+}
+
 export async function symbolsCoinGecko(): Promise<{ crypto: CryptoSymbols[] }> {
     const url = `https://api.coingecko.com/api/v3/coins/list`;
+    const resp = await fetch(url, {
+        method: 'GET',
+        headers: {}
+    }).then((response) => {
+        return response.json();
+    });
+
+    return await resp;
+}
+
+export async function symbolsCoinGeckoRange(id: string, from: number, to: number): Promise<any> {
+    const url = `https://api.coingecko.com/api/v3/coins/${id}/market_chart/range?vs_currency=usd&from=${from}&to=${to}`;
+
     const resp = await fetch(url, {
         method: 'GET',
         headers: {}

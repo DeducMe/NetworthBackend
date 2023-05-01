@@ -1,13 +1,15 @@
 import { NextFunction, Request, Response } from 'express';
-import { decodeToken, errorHandler, sendBackHandler, typeCheckErrorHandler } from '../../../../functions/apiHandlers';
-import { checkTypes } from '../../../../functions/common';
-import profileModal from '../../../users/profile/profileModal';
-import assetsModal from '../../assets/assetsModal';
-import currencyModal from '../../currency/currencyModal';
-import typesModal from '../../types/typesModal';
-import { coinToBtc, coinToStable, symbolsCoinGecko, symbolsCoinGeckoById } from '../../../../functions/coingecko';
-import { btcToFiat, currencyExchangeCC } from '../../../../functions/exchangerate';
-import assetsChangeLogModal from '../../assetsChangeLog/assetsChangeLogModal';
+import { decodeToken, errorHandler, sendBackHandler, typeCheckErrorHandler } from '../../../functions/apiHandlers';
+import { checkTypes } from '../../../functions/common';
+import profileModal from '../../users/profile/profileModal';
+import assetsModal from '../assets/assetsModal';
+import currencyModal from '../currency/currencyModal';
+import typesModal from '../types/typesModal';
+import { coinToBtc, coinToStable, searchSymbols, symbolsCoinGecko, symbolsCoinGeckoById, symbolsCoinGeckoRange } from '../../../functions/coingecko';
+import { btcToFiat, currencyExchangeCC, currencyExchangeWithDateCC } from '../../../functions/exchangerate';
+import assetsChangeLogModal from '../assetsChangeLog/assetsChangeLogModal';
+import moment from 'moment';
+import cryptoModal from './cryptoModal';
 
 const create = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -153,8 +155,6 @@ const getAll = async (req: Request, res: Response, next: NextFunction) => {
         // const btcConvertedPrice = coin.btc * btcFiatPrice[profileCurrency];
         // const allTime = Number((((btcFiatPrice[profileCurrency] - btcConvertedPrice) / btcFiatPrice[profileCurrency]) * 100).toFixed(2));
 
-        console.log(prices, coinCreatedInCurrency, profileCurrency.toLowerCase());
-
         let pricePerItem = cryptoItem.pricePerItem;
         let priceTotal = cryptoItem.price;
 
@@ -181,8 +181,87 @@ const getAll = async (req: Request, res: Response, next: NextFunction) => {
 };
 
 const getList = async (req: Request, res: Response, next: NextFunction) => {
-    const data = await symbolsCoinGecko();
+    const data = await cryptoModal
+        .find()
+        .sort({
+            marketCapRank: 1 //Sort by marketCap ASC
+        })
+        .exec();
     sendBackHandler(res, 'crypto', data);
 };
 
-export default { getAll, create, getList };
+const search = async (req: Request, res: Response, next: NextFunction) => {
+    let { query } = req.body;
+    const data = await searchSymbols(query);
+    sendBackHandler(res, 'crypto', data.coins);
+
+    const localDbCrypto = await cryptoModal.find({ sysname: { $in: data.coins.map((item) => item.id) } }).exec();
+
+    for (let index = 0; index < data.coins.length; index++) {
+        const item = data.coins[index];
+
+        const cryptoItem = localDbCrypto.find((el) => el.sysname === item.id);
+        await cryptoModal
+            .updateOne(
+                { id_: cryptoItem?._id },
+                {
+                    name: item.name,
+                    sysname: item.id,
+                    marketCapRank: item.market_cap_rank,
+                    thumb: item.thumb,
+                    large: item.large
+                }
+            )
+            .exec();
+        if (!!cryptoItem) return;
+
+        await new cryptoModal({
+            name: item.name,
+            sysname: item.id,
+            marketCapRank: item.market_cap_rank,
+            thumb: item.thumb,
+            large: item.large
+        }).save();
+    }
+};
+
+const getCryptoPriceByDate = async (req: Request, res: Response, next: NextFunction) => {
+    let { operationDate, sysname, currency } = req.body;
+    console.log({ operationDate, sysname, currency }, req, req.body);
+    const currencyObj = await currencyModal.findById(currency);
+    if (!currencyObj) return errorHandler(res, { message: `Cant find passed currency in db` }, 422);
+
+    const decoded = await decodeToken(req?.headers?.authorization || '');
+    if (!decoded) return errorHandler(res, 'decode of auth header went wrong', 500);
+    const profile = await profileModal.findOne({ userId: decoded.id });
+    if (!profile) return errorHandler(res, { message: 'decode of auth header went wrong' }, 500);
+
+    const DAY_TIMESTAMP = 86400;
+    const fromDate = operationDate - DAY_TIMESTAMP * 2;
+    const toDate = operationDate + DAY_TIMESTAMP * 2;
+
+    const data = await symbolsCoinGeckoRange(sysname, fromDate, toDate);
+
+    console.log(data);
+
+    if (!data.prices?.length) return errorHandler(res, { message: `There is no crypto prices available at this datetime` }, 422);
+
+    const prices = data.prices.map((item: number[]) => {
+        const itemUnixStamp = item[0] / 1000;
+        return [itemUnixStamp, item[1]];
+    });
+    // finding closest to date
+    const goal = operationDate;
+    const closest = prices.reduce((prev: number[], curr: number[]) => {
+        return Math.abs(curr[0] - goal) < Math.abs(prev[0] - goal) ? curr : prev;
+    });
+
+    const buyDate = moment.unix(closest[0]).format('YYYY-MM-DD');
+    const priceRates = await currencyExchangeWithDateCC(buyDate, 'USD', currencyObj.sysname.toUpperCase());
+
+    const result = priceRates.rates[currencyObj.sysname.toUpperCase()] * closest[1];
+
+    sendBackHandler(res, 'crypto', result);
+};
+
+export default { getAll, create, getList, getCryptoPriceByDate, search };
