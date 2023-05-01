@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { errorHandler, sendBackHandler } from '../../../functions/apiHandlers';
 import Currency from './currencyModal';
-import { currencyExchangeCC } from '../../../functions/cryptocompare';
+import { currencyExchangeCC } from '../../../functions/exchangerate';
 
 const currenciesObj = [
     { name: 'Russian rubles', sysname: 'RUB', symbol: '₽' },
@@ -225,7 +225,7 @@ const exchangeCurrency = async (req: Request, res: Response, next: NextFunction)
     // const converted = amount * exchangeRate['Realtime Currency Exchange Rate']['5. Exchange Rate'];
 
     const exchangeRate = await currencyExchangeCC(firstCurrency.sysname, secondCurrency.sysname);
-    const converted = amount * exchangeRate[secondCurrency.sysname];
+    const converted = amount * exchangeRate.info.rate;
 
     sendBackHandler(res, 'currency', converted);
 };

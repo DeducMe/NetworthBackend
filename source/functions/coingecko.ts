@@ -49,8 +49,6 @@ export async function coinToStable({ idsFrom, idsTo }: { idsFrom: string[]; idsT
     const idsToConverted = idsTo.join('%2C');
     const url = `https://api.coingecko.com/api/v3/simple/price?ids=${idsFromConverted}&vs_currencies=${idsToConverted}&include_24hr_change=true`;
 
-    console.log(url);
-
     const resp = await fetch(url, {
         method: 'GET',
         headers: {}

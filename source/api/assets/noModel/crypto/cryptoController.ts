@@ -6,7 +6,8 @@ import assetsModal from '../../assets/assetsModal';
 import currencyModal from '../../currency/currencyModal';
 import typesModal from '../../types/typesModal';
 import { coinToBtc, coinToStable, symbolsCoinGecko, symbolsCoinGeckoById } from '../../../../functions/coingecko';
-import { btcToFiat, currencyExchangeCC } from '../../../../functions/cryptocompare';
+import { btcToFiat, currencyExchangeCC } from '../../../../functions/exchangerate';
+import assetsChangeLogModal from '../../assetsChangeLog/assetsChangeLogModal';
 
 const create = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -49,6 +50,8 @@ const create = async (req: Request, res: Response, next: NextFunction) => {
 
         const { pricePerItem: oldCoinPrice, amount: oldCoinAmount } = alreadyBoughtCoins || {};
 
+        let convertedTickerPrice;
+
         let newCoinPrice = tickerPrice;
         let newCoinAmount = amount;
 
@@ -61,11 +64,10 @@ const create = async (req: Request, res: Response, next: NextFunction) => {
                 const coinCurrencyOldSysname = alreadyBoughtCoins!.currency.sysname.toLowerCase();
                 const coinCurrencyNewSysname = currencyObj.sysname.toLowerCase();
 
-                const test = await currencyExchangeCC(coinCurrencyOldSysname, coinCurrencyNewSysname);
+                const exchangeRate = await currencyExchangeCC(coinCurrencyOldSysname, coinCurrencyNewSysname);
 
-                console.log(test);
-
-                newCoinPrice = newCoinPrice / test[coinCurrencyNewSysname.toUpperCase()];
+                newCoinPrice = newCoinPrice / exchangeRate.info.rate;
+                convertedTickerPrice = tickerPrice / exchangeRate.info.rate;
             }
             newCoinPrice = (newCoinPrice * amount + oldCoinPrice * oldCoinAmount) / newCoinAmount;
         }
@@ -79,11 +81,25 @@ const create = async (req: Request, res: Response, next: NextFunction) => {
             currency: alreadyBoughtCoins?.currency._id || currency,
             userProfileId: profile.id
         };
+
+        let assetToAddLogTo;
+        let assetsLogChangeType = amount > 0 ? 'BUY' : 'SELL';
+
         if (alreadyBoughtCoins) {
             await alreadyBoughtCoins.updateOne(newAsset).exec();
+            assetToAddLogTo = alreadyBoughtCoins;
         } else {
-            await new assetsModal(newAsset).save();
+            assetToAddLogTo = await new assetsModal(newAsset).save();
         }
+
+        await new assetsChangeLogModal({
+            name: `${assetsLogChangeType} - ${name}`,
+            asset: assetToAddLogTo._id,
+            type: assetsLogChangeType,
+            price: convertedTickerPrice,
+            amount,
+            userProfileId: profile.id
+        }).save();
 
         sendBackHandler(res, 'crypto', true);
     } catch (e) {
@@ -124,14 +140,8 @@ const getAll = async (req: Request, res: Response, next: NextFunction) => {
     const idsTo = [profileCurrency.toLowerCase()];
 
     const prices = await coinToStable({ idsFrom: [...idsFrom, ...idsCurrencies], idsTo });
-    const btcConverted = await coinToBtc({ idsFrom });
 
-    const btcFiatPrice = await btcToFiat(profileCurrency);
-
-    console.log(prices, btcConverted, btcFiatPrice);
-
-    Object.keys(btcConverted).forEach((key) => {
-        const coin = btcConverted[key];
+    Object.keys(prices).forEach((key) => {
         const price = prices[key];
         const priceIntraday = price[`${profileCurrency.toLowerCase()}_24h_change`];
         const currentPrice = price[`${profileCurrency.toLowerCase()}`];
@@ -140,7 +150,7 @@ const getAll = async (req: Request, res: Response, next: NextFunction) => {
         if (!cryptoItem) return;
         const coinCreatedInCurrency = cryptoItem.currency.sysname.toLowerCase();
 
-        const btcConvertedPrice = coin.btc * btcFiatPrice[profileCurrency];
+        // const btcConvertedPrice = coin.btc * btcFiatPrice[profileCurrency];
         // const allTime = Number((((btcFiatPrice[profileCurrency] - btcConvertedPrice) / btcFiatPrice[profileCurrency]) * 100).toFixed(2));
 
         console.log(prices, coinCreatedInCurrency, profileCurrency.toLowerCase());

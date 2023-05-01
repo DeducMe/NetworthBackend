@@ -19,6 +19,7 @@ import currencyRoute from './api/assets/currency/currencyRoute';
 import typesRoute from './api/assets/types/typesRoute';
 import stocksRoute from './api/assets/noModel/stocks/stocksRoute';
 import cryptoRoute from './api/assets/noModel/crypto/cryptoRoute';
+import assetsChangeLogRoute from './api/assets/assetsChangeLog/assetsChangeLogRoute';
 
 // import errorHandler from './errorHandling';
 const NAMESPACE = 'Server';
@@ -87,6 +88,7 @@ app.use('/api/', assetsTypesItemRoute);
 app.use('/api/', typesRoute);
 app.use('/api/', stocksRoute);
 app.use('/api/', cryptoRoute);
+app.use('/api/', assetsChangeLogRoute);
 
 app.delete('/api/wipe', async (req, res, next) => {
     mongoose.connection.dropDatabase();

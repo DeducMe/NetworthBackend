@@ -1,8 +1,7 @@
-// 250,000 calls
-// 100,000 month
+//API requests made by a throttled user or app will fail. All API requests are subject to rate limits. Real time rate limit usage statistics are described in headers that are included with most API responses once enough calls have been made to an endpoint.
 
 export async function currencyExchangeCC(from: string, to: string) {
-    const url = `https://min-api.cryptocompare.com/data/price?fsym=${from}&tsyms=${to}`;
+    const url = `https://api.exchangerate.host/convert?from=${from}&to=${to}`;
     const resp = await fetch(url, {
         method: 'GET',
         headers: {}
