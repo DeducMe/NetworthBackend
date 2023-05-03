@@ -9,6 +9,6 @@ parsed
 *.mobileprovision
 *.orig.*
 
-config.ts
+
 package-lock.json
 configs/config.json
