@@ -13,7 +13,7 @@ import cryptoModal from './cryptoModal';
 
 const create = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        let { name, sysname, amount, price, currency } = req.body;
+        let { name, sysname, amount, price, currency, operationDate } = req.body;
         const types = {
             name: 'string',
             sysname: 'string',
@@ -69,10 +69,13 @@ const create = async (req: Request, res: Response, next: NextFunction) => {
                 const exchangeRate = await currencyExchangeCC(coinCurrencyOldSysname, coinCurrencyNewSysname);
 
                 newCoinPrice = newCoinPrice / exchangeRate.info.rate;
-                convertedTickerPrice = tickerPrice / exchangeRate.info.rate;
             }
+            convertedTickerPrice = tickerPrice;
+
             newCoinPrice = (newCoinPrice * amount + oldCoinPrice * oldCoinAmount) / newCoinAmount;
         }
+
+        // TODO НЕ ИЗМЕНЯТЬ name
         const newAsset = {
             name: name,
             sysname: sysname,
@@ -87,6 +90,8 @@ const create = async (req: Request, res: Response, next: NextFunction) => {
         let assetToAddLogTo;
         let assetsLogChangeType = amount > 0 ? 'BUY' : 'SELL';
 
+        console.log(newAsset);
+
         if (alreadyBoughtCoins) {
             await alreadyBoughtCoins.updateOne(newAsset).exec();
             assetToAddLogTo = alreadyBoughtCoins;
@@ -99,9 +104,41 @@ const create = async (req: Request, res: Response, next: NextFunction) => {
             asset: assetToAddLogTo._id,
             type: assetsLogChangeType,
             price: convertedTickerPrice,
+            operationDate,
             amount,
             userProfileId: profile.id
         }).save();
+
+        sendBackHandler(res, 'crypto', true);
+    } catch (e) {
+        errorHandler(res, e);
+    }
+};
+
+const deleteRow = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        let { _id } = req.body;
+
+        if (!_id) return errorHandler(res, { message: `_id is not passed` }, 422);
+        // check existance of a coin
+
+        const decoded = await decodeToken(req?.headers?.authorization || '');
+        if (!decoded) return errorHandler(res, { message: 'decode of auth header went wrong' }, 500);
+
+        const profile = await profileModal.findOne({ userId: decoded.id });
+        if (!profile) return errorHandler(res, { message: 'decode of auth header went wrong' }, 500);
+
+        const foundedAsset = await assetsModal.findOne({ _id });
+        if (!foundedAsset) return errorHandler(res, { message: `Cant find asset ` }, 422);
+
+        const foundChangeLogs = await assetsChangeLogModal.find({ asset: _id });
+
+        const filters: { _id?: { $in: string[] } } = {};
+
+        if (foundChangeLogs?.length) filters._id = { $in: foundChangeLogs.map((item) => item._id) };
+
+        await assetsChangeLogModal.deleteMany(filters);
+        await foundedAsset.deleteOne();
 
         sendBackHandler(res, 'crypto', true);
     } catch (e) {
@@ -183,6 +220,7 @@ const getAll = async (req: Request, res: Response, next: NextFunction) => {
 const getList = async (req: Request, res: Response, next: NextFunction) => {
     const data = await cryptoModal
         .find()
+        .select('-_id')
         .sort({
             marketCapRank: 1 //Sort by marketCap ASC
         })
@@ -193,7 +231,15 @@ const getList = async (req: Request, res: Response, next: NextFunction) => {
 const search = async (req: Request, res: Response, next: NextFunction) => {
     let { query } = req.body;
     const data = await searchSymbols(query);
-    sendBackHandler(res, 'crypto', data.coins);
+    const dataMapped = data.coins.map((item) => ({
+        name: item.name,
+        sysname: item.id,
+        marketCapRank: item.market_cap_rank,
+        thumb: item.thumb,
+        large: item.large,
+        symbol: item.symbol
+    }));
+    sendBackHandler(res, 'crypto', dataMapped);
 
     const localDbCrypto = await cryptoModal.find({ sysname: { $in: data.coins.map((item) => item.id) } }).exec();
 
@@ -209,18 +255,20 @@ const search = async (req: Request, res: Response, next: NextFunction) => {
                     sysname: item.id,
                     marketCapRank: item.market_cap_rank,
                     thumb: item.thumb,
-                    large: item.large
+                    large: item.large,
+                    symbol: item.symbol
                 }
             )
             .exec();
-        if (!!cryptoItem) return;
+        if (!!cryptoItem?._id) return;
 
         await new cryptoModal({
             name: item.name,
             sysname: item.id,
             marketCapRank: item.market_cap_rank,
             thumb: item.thumb,
-            large: item.large
+            large: item.large,
+            symbol: item.symbol
         }).save();
     }
 };
@@ -259,9 +307,13 @@ const getCryptoPriceByDate = async (req: Request, res: Response, next: NextFunct
     const buyDate = moment.unix(closest[0]).format('YYYY-MM-DD');
     const priceRates = await currencyExchangeWithDateCC(buyDate, 'USD', currencyObj.sysname.toUpperCase());
 
+    if (!priceRates.rates) {
+        return sendBackHandler(res, 'crypto', null);
+    }
+
     const result = priceRates.rates[currencyObj.sysname.toUpperCase()] * closest[1];
 
     sendBackHandler(res, 'crypto', result);
 };
 
-export default { getAll, create, getList, getCryptoPriceByDate, search };
+export default { getAll, create, getList, getCryptoPriceByDate, search, deleteRow };
