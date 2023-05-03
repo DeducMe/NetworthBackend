@@ -7,6 +7,7 @@ export interface ICrypto extends Document {
     marketCapRank?: number;
     thumb?: string;
     large?: string;
+    symbol?: string;
 }
 
 const CryptoSchema: Schema = new Schema(
@@ -15,7 +16,8 @@ const CryptoSchema: Schema = new Schema(
         sysname: { type: Schema.Types.String, required: true },
         thumb: { type: Schema.Types.String, required: false },
         large: { type: Schema.Types.String, required: false },
-        marketCapRank: { type: Schema.Types.Number, required: false }
+        marketCapRank: { type: Schema.Types.Number, required: false },
+        symbol: { type: Schema.Types.String, required: false }
     },
     {
         timestamps: false
