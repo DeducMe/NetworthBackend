@@ -28,10 +28,10 @@ export const app = express();
 /** Connect to Mongo */
 mongoose
     .connect(config.mongo.url, config.mongo.options)
-    .then((result) => {
+    .then((result: any) => {
         logging.info(NAMESPACE, 'Mongo Connected');
     })
-    .catch((error) => {
+    .catch((error: { message: string }) => {
         logging.error(NAMESPACE, error.message, error);
     });
 mongoose.connection.on('open', function () {
