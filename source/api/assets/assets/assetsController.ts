@@ -3,6 +3,7 @@ import { decodeToken, errorHandler, sendBackHandler } from '../../../functions/a
 import Assets from './assetsModal';
 import { createAssetsAdditionalTypesItem } from '../assetsAdditional/assetsAdditionalTypesItem/assetsAdditionalTypesItemController';
 import profileModal from '../../users/profile/profileModal';
+import { Schema } from 'mongoose';
 
 const put = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -100,8 +101,6 @@ const getAll = async (req: Request, res: Response, next: NextFunction) => {
         additionalFilters.categories = { $in: filters.categories };
     }
 
-    console.log(additionalFilters);
-
     const data = await Assets.find({ userProfileId: profile.id, ...additionalFilters })
         .where('price')
         .populate([
@@ -120,4 +119,33 @@ const getAll = async (req: Request, res: Response, next: NextFunction) => {
     sendBackHandler(res, 'assets', data);
 };
 
-export default { getAll, create, put, deleteRow };
+const getFilterVariants = async (req: Request, res: Response, next: NextFunction) => {
+    const decoded = await decodeToken(req?.headers?.authorization || '');
+    if (!decoded) return errorHandler(res, 'decode of auth header went wrong', 500);
+
+    const profile = await profileModal.findOne({ userId: decoded.id });
+    if (!profile) return errorHandler(res, 'decode of auth header went wrong', 500);
+
+    const assets = await Assets.find({ userProfileId: profile.id }).sort({ price: -1 });
+    if (!assets) return errorHandler(res, { message: `error while looking for assets or no assets` }, 500);
+    if (!assets?.length) return errorHandler(res, { message: `no assets to filter` }, 500);
+
+    const maxPrice = assets[0].price;
+    const minPrice = assets[assets.length - 1].price;
+
+    const categories: string[] = [];
+
+    assets.forEach((item) => {
+        item.categories?.forEach((item) => {
+            !categories.includes(`${item}`) && categories.push(`${item}`);
+        });
+    });
+    const data = {
+        minPrice,
+        maxPrice,
+        categories
+    };
+    sendBackHandler(res, 'assets', data);
+};
+
+export default { getAll, create, put, deleteRow, getFilterVariants };
