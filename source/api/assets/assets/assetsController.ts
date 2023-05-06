@@ -91,18 +91,16 @@ const getAll = async (req: Request, res: Response, next: NextFunction) => {
 
     const additionalFilters: any = {};
 
-    if (filters?.priceMin || filters?.priceMax) {
+    if (typeof filters?.priceMin === 'number' || typeof filters?.priceMax === 'number') {
         additionalFilters.price = {};
         if (typeof filters.priceMin === 'number') additionalFilters.price.$gte = filters?.priceMin;
         if (typeof filters.priceMax === 'number') additionalFilters.price.$lt = filters?.priceMax;
     }
 
-    if (filters?.categories) {
+    if (filters?.categories?.length) {
         additionalFilters.categories = { $in: filters.categories };
     }
-
     const data = await Assets.find({ userProfileId: profile.id, ...additionalFilters })
-        .where('price')
         .populate([
             'type',
             'categories',

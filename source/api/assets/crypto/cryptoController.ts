@@ -31,6 +31,9 @@ const create = async (req: Request, res: Response, next: NextFunction) => {
         const checkSysnameExistance = await symbolsCoinGeckoById(sysname);
         if (!checkSysnameExistance || checkSysnameExistance?.error) return errorHandler(res, { message: 'COINGECKO error - ' + checkSysnameExistance?.error }, 422);
 
+        const localCoin = await cryptoModal.findOne({ sysname: checkSysnameExistance.id });
+        if (!localCoin) return errorHandler(res, { message: `Cant find coin in db` }, 422);
+
         let tickerPrice = price;
 
         if (!tickerPrice) {
@@ -52,8 +55,7 @@ const create = async (req: Request, res: Response, next: NextFunction) => {
 
         const { pricePerItem: oldCoinPrice, amount: oldCoinAmount } = alreadyBoughtCoins || {};
 
-        let convertedTickerPrice;
-
+        let convertedTickerPrice = tickerPrice;
         let newCoinPrice = tickerPrice;
         let newCoinAmount = amount;
 
@@ -70,7 +72,6 @@ const create = async (req: Request, res: Response, next: NextFunction) => {
 
                 newCoinPrice = newCoinPrice / exchangeRate.info.rate;
             }
-            convertedTickerPrice = tickerPrice;
 
             newCoinPrice = (newCoinPrice * amount + oldCoinPrice * oldCoinAmount) / newCoinAmount;
         }
@@ -84,13 +85,12 @@ const create = async (req: Request, res: Response, next: NextFunction) => {
             amount: newCoinAmount,
             type: coinType.id,
             currency: alreadyBoughtCoins?.currency._id || currency,
-            userProfileId: profile.id
+            userProfileId: profile.id,
+            crypto: localCoin._id
         };
 
         let assetToAddLogTo;
         let assetsLogChangeType = amount > 0 ? 'BUY' : 'SELL';
-
-        console.log(newAsset);
 
         if (alreadyBoughtCoins) {
             await alreadyBoughtCoins.updateOne(newAsset).exec();
@@ -106,6 +106,7 @@ const create = async (req: Request, res: Response, next: NextFunction) => {
             price: convertedTickerPrice,
             operationDate,
             amount,
+            image: checkSysnameExistance.image.small,
             userProfileId: profile.id
         }).save();
 
@@ -163,6 +164,7 @@ const getAll = async (req: Request, res: Response, next: NextFunction) => {
             'categories',
             'currency',
             'additional',
+            'crypto',
             {
                 path: 'additional',
                 populate: {
@@ -275,7 +277,6 @@ const search = async (req: Request, res: Response, next: NextFunction) => {
 
 const getCryptoPriceByDate = async (req: Request, res: Response, next: NextFunction) => {
     let { operationDate, sysname, currency } = req.body;
-    console.log({ operationDate, sysname, currency }, req, req.body);
     const currencyObj = await currencyModal.findById(currency);
     if (!currencyObj) return errorHandler(res, { message: `Cant find passed currency in db` }, 422);
 
@@ -289,8 +290,6 @@ const getCryptoPriceByDate = async (req: Request, res: Response, next: NextFunct
     const toDate = operationDate + DAY_TIMESTAMP * 2;
 
     const data = await symbolsCoinGeckoRange(sysname, fromDate, toDate);
-
-    console.log(data);
 
     if (!data.prices?.length) return errorHandler(res, { message: `There is no crypto prices available at this datetime` }, 422);
 

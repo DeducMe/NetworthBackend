@@ -14,6 +14,8 @@ const AssetsSchema: Schema = new Schema(
         currency: { type: Schema.Types.ObjectId, ref: 'Currency', required: false },
         image: { type: Schema.Types.String, required: false },
         additional: [{ type: Schema.Types.ObjectId, required: false, ref: 'AssetsAdditionalTypesItem' }],
+        crypto: { type: Schema.Types.ObjectId, required: false, ref: 'Crypto' },
+
         userProfileId: { type: Schema.Types.ObjectId, ref: 'Profile', required: false }
     },
     {

@@ -11,4 +11,5 @@ export default interface Assets extends Document {
     additional?: Schema.Types.ObjectId[];
     sysname: string;
     pricePerItem: number;
+    cryptoId?: Schema.Types.ObjectId;
 }
