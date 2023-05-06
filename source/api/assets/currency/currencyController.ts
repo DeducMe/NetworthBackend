@@ -231,7 +231,17 @@ const exchangeCurrency = async (req: Request, res: Response, next: NextFunction)
 };
 
 const getAll = async (req: Request, res: Response, next: NextFunction) => {
-    const data = await Currency.find().exec();
+    const { filters } = req.body;
+
+    let additionalFilters: any = {};
+
+    if (typeof filters?.query === 'string' && filters?.query?.length > 0) {
+        const regex = new RegExp(filters?.query, 'i');
+
+        additionalFilters = { $or: [{ name: regex }, { sysname: regex }, { symbol: regex }] };
+    }
+
+    const data = await Currency.find(additionalFilters).exec();
     sendBackHandler(res, 'currency', data);
 };
 

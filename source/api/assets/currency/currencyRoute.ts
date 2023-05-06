@@ -6,7 +6,7 @@ const router = express.Router();
 router.post('/currency', controller.create);
 router.post('/currencyExchange', controller.exchangeCurrency);
 
-router.get('/currency', controller.getAll);
+router.post('/currency/list', controller.getAll);
 router.get('/initCurrencies', controller.initCurrencies);
 
 export default router;
