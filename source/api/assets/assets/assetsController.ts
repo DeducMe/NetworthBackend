@@ -100,6 +100,13 @@ const getAll = async (req: Request, res: Response, next: NextFunction) => {
     if (filters?.categories?.length) {
         additionalFilters.categories = { $in: filters.categories };
     }
+
+    if (typeof filters?.query === 'string') {
+        const regex = new RegExp(filters?.query, 'i');
+
+        additionalFilters.name = regex;
+    }
+
     const data = await Assets.find({ userProfileId: profile.id, ...additionalFilters })
         .populate([
             'type',

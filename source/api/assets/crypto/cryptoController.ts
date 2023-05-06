@@ -222,7 +222,6 @@ const getAll = async (req: Request, res: Response, next: NextFunction) => {
 const getList = async (req: Request, res: Response, next: NextFunction) => {
     let { sort } = req.body;
 
-    console.log(sort);
     const data = await cryptoModal.find().select('-_id').sort(sort).exec();
 
     sendBackHandler(res, 'crypto', data);
