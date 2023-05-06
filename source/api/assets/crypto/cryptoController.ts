@@ -220,13 +220,11 @@ const getAll = async (req: Request, res: Response, next: NextFunction) => {
 };
 
 const getList = async (req: Request, res: Response, next: NextFunction) => {
-    const data = await cryptoModal
-        .find()
-        .select('-_id')
-        .sort({
-            marketCapRank: 1 //Sort by marketCap ASC
-        })
-        .exec();
+    let { sort } = req.body;
+
+    console.log(sort);
+    const data = await cryptoModal.find().select('-_id').sort(sort).exec();
+
     sendBackHandler(res, 'crypto', data);
 };
 

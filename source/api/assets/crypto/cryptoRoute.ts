@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.post('/crypto', controller.create);
 router.get('/crypto', controller.getAll);
-router.get('/crypto/list', controller.getList);
+router.post('/crypto/list', controller.getList);
 router.post('/getCryptoPriceByDate', controller.getCryptoPriceByDate);
 router.post('/crypto/search', controller.search);
 router.delete('/crypto/delete', controller.deleteRow);
