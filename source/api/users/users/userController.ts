@@ -34,7 +34,7 @@ const create = async (req: Request, res: Response, next: NextFunction) => {
         await user.save();
         await profile.save();
 
-        sendBackHandler(res, 'register', token);
+        sendBackHandler(res, 'token', token);
     } catch (e) {
         errorHandler(res, e);
     }
