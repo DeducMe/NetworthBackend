@@ -25,6 +25,8 @@ const create = async (req: Request, res: Response, next: NextFunction) => {
         const check = checkTypes({ sysname, amount, currency, name }, types);
         if (!check) return typeCheckErrorHandler(res, types);
 
+        const operationType = amount > 0 ? 'BUY' : 'SELL';
+
         const currencyObj = await currencyModal.findById(currency);
         if (!currencyObj) return errorHandler(res, { message: `Cant find passed currency in db` }, 422);
         // check existance of a coin
@@ -52,6 +54,11 @@ const create = async (req: Request, res: Response, next: NextFunction) => {
         if (!coinType) return errorHandler(res, { message: 'Cant find CRYPTO type in db' }, 500);
 
         const alreadyBoughtCoins = await assetsModal.findOne({ sysname, userProfileId: profile.id }).populate('currency');
+
+        if (operationType === 'SELL') {
+            if (!alreadyBoughtCoins) return errorHandler(res, { message: 'You dont have any crypto to sell' }, 422);
+            if (alreadyBoughtCoins.amount < amount) return errorHandler(res, { message: 'You dont have enough crypto to sell' }, 422);
+        }
 
         const { pricePerItem: oldCoinPrice, amount: oldCoinAmount } = alreadyBoughtCoins || {};
 
@@ -90,7 +97,6 @@ const create = async (req: Request, res: Response, next: NextFunction) => {
         };
 
         let assetToAddLogTo;
-        let assetsLogChangeType = amount > 0 ? 'BUY' : 'SELL';
 
         if (alreadyBoughtCoins) {
             await alreadyBoughtCoins.updateOne(newAsset).exec();
@@ -100,9 +106,9 @@ const create = async (req: Request, res: Response, next: NextFunction) => {
         }
 
         await new assetsChangeLogModal({
-            name: `${assetsLogChangeType} - ${name}`,
+            name: `${operationType} - ${name}`,
             asset: assetToAddLogTo._id,
-            type: assetsLogChangeType,
+            type: operationType,
             price: convertedTickerPrice,
             operationDate,
             amount,
@@ -303,7 +309,7 @@ const getCryptoPriceByDate = async (req: Request, res: Response, next: NextFunct
     const buyDate = moment.unix(closest[0]).format('YYYY-MM-DD');
     const priceRates = await currencyExchangeWithDateCC(buyDate, 'USD', currencyObj.sysname.toUpperCase());
 
-    if (!priceRates.rates) {
+    if (!priceRates?.rates) {
         return sendBackHandler(res, 'crypto', null);
     }
 
